@@ -16,6 +16,15 @@ try:
 except IndexError:
     tor = False
 
+# Ask for VPN
+
+if tor == False:
+    answer = input("Are you using VPN?? [Y/N] ")
+    if answer == "Y" or answer == "y":
+        pass
+    else:
+        sys.exit()
+
 runtime_path = os.getcwd()
 time = str(datetime.datetime.now())
 
@@ -124,7 +133,7 @@ def prepareFileOutput(recieved_json, file_list, server, request_headers):
     output.write("Request headers --> " + str(request_headers) + "\n")
 
     if tor:
-        output.write("[UPLOADED WITH TOR]" + "\n")
+        output.write("[UPLOADED USING TOR]" + "\n")
 
     output.write("-------------------------------" + "\n")
     output.write(" " + "\n")
@@ -143,7 +152,7 @@ except FileNotFoundError:
     sys.exit()
 
 except requests.exceptions.ConnectionError:
-    print("ConnectionError - Please, check your internet connection, your VPN or your proxy")
+    print("ConnectionError - Please, check your internet connection, your VPN or tor (tor must run on 127.0.0.1:9050)")
     sys.exit()
 
 except ConnectionRefusedError:
