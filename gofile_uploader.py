@@ -13,6 +13,9 @@ tor = False
 try:
     if sys.argv[1] == "tor" or sys.argv[1] == "Tor" or sys.argv[1] == "TOR":
         tor = True
+    if sys.argv[1] != "tor" and sys.argv[1] != "Tor" and sys.argv[1] != "TOR":
+        print("Invalid argument. Did you mean 'tor'?")
+        sys.exit()
 except IndexError:
     tor = False
 
