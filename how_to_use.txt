@@ -1,0 +1,28 @@
+------------ Checksums (gofile_uploader) -----------
+md5 --> a02d08a876e7345f70a0c2a23a233440
+sha1 --> DC32C7BCA7CD383D709861ECB9352AE031E6C8B9
+sha256 --> 81617A13FCB3A5771D4BD4B4683C16FF060C08DAAFFD1B95C000638390583DEA
+
+sha512 --> AFEABE4FD0CBE7D75B33CC226D55E3488904BAE604084A2BEC09B09837293345
+F32D87A2F440B411F56C07DB5CEEB3CFDF9E250B8F7F2776DB0180DBA3969C7E
+
+
+-------------- Instructions -------------------
+
+
+Move the files you want to upload into "files/" directory, then execute the script:
+
+Ways of executing:
+
+$ python3 gofile_uploader.py
+
+$ python3 gofile_uploader.py tor
+
+If you use tor parameter, then all requests will be done with tor, so make sure
+tor is running on 127.0.0.1:9050
+
+If you don't use tor parameter, then all requests will be done with your ACTUAL IP, so USE A VPN.
+
+
+
+Notes: This script is able to spoof user-agent 
