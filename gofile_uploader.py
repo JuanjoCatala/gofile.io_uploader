@@ -13,10 +13,10 @@ tor = False
 try:
     if sys.argv[1] == "tor" or sys.argv[1] == "Tor" or sys.argv[1] == "TOR":
         tor = True
-    if sys.argv[1] != "tor" and sys.argv[1] != "Tor" and sys.argv[1] != "TOR":
+    elif sys.argv[1] != "tor" and sys.argv[1] != "Tor" and sys.argv[1] != "TOR":
         print("Invalid argument. Did you mean 'tor'?")
         sys.exit()
-except IndexError:
+except IndexError:  # In case there's no parameter recieved
     tor = False
 
 # Ask for VPN
@@ -38,7 +38,7 @@ if os.path.exists("files"):
 else: 
     os.mkdir("files")
     print("Dir created, please move your files in there and restart the script")
-
+    sys.exit()
 
 # ---------- Defining proxys and headers ---------------------------------------
 
@@ -66,10 +66,10 @@ def getBestServer():
     # https://apiv2.gofile.io/getServer
     # example --> {"status":"ok","data":{"server":"srv-file6"}}
     
-    if tor == True: 
+    if tor: 
         request = requests.get("https://apiv2.gofile.io/getServer", headers=headers, proxies=tor_proxy) # Tor request
 
-    if tor == False: # Normal request
+    else: # Normal request
         request = requests.get("https://apiv2.gofile.io/getServer", headers=headers)
 
     recieved_json = json.loads(json.dumps(request.json()))  # Loading recieved json
@@ -96,11 +96,11 @@ def uploadFiles(file_list, best_server):
 
         print("[*] Sending '" + file_name + "'...") # Performing request
 
-        if tor == True: # Tor request
-            print("[!] Using tor [!]" + "\n")
+        if tor: # Tor request
+            print("[!] Using tor to perform the request [!]" + "\n")
             request = requests.post("https://" + best_server + ".gofile.io/uploadFile", proxies=tor_proxy, headers=headers, data={"description":file_name}, files={"file":(file_name,file_content)})
 
-        if tor == False: # Normal request
+        else: # Normal request
             request = requests.post("https://" + best_server + ".gofile.io/uploadFile", headers=headers, data={"description":file_name}, files={"file":(file_name,file_content)})
 
         print("[*] Done" + "\n")
@@ -136,7 +136,8 @@ def prepareFileOutput(recieved_json, file_list, server, request_headers):
     output.write("Request headers --> " + str(request_headers) + "\n")
 
     if tor:
-        output.write("[UPLOADED USING TOR]" + "\n")
+        output.write(" ")
+        output.write("---- [UPLOADED USING TOR] ----" + "\n")
 
     output.write("-------------------------------" + "\n")
     output.write(" " + "\n")
