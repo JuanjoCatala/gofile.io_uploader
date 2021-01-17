@@ -8,8 +8,8 @@ import json
 
 tor = False 
 
-runtime_path = os.getcwd()  # getting the execution path, to move better on folders
-time = str(datetime.datetime.now())  # getting the clock time, to include it in filenames, avoiding overwritting
+runtime_path = os.getcwd()  # getting the execution path, to move better around folders
+time = str(datetime.datetime.now())  # getting the clock time, to include it in filenames, avoiding overwritting log files
 
 # Enables or disables tor depending on the arguments
 
@@ -31,7 +31,7 @@ if tor == False:
     else:
         sys.exit()
 
-#---------- check if directories exists (just to avoid issues)
+#---------- check if directories created
 
 if os.path.exists("files"):
     pass
@@ -56,10 +56,10 @@ headers = {
 # ----------- functions ---------------------------------------------------------
 
 def getFiles():     # Returns a list with the filenames in "files" directory
+
     os.chdir("files")
     return os.listdir() 
     os.chdir(runtime_path)
-
 # -------------------------------------------------------------------------------
 
 def getBestServer():
@@ -75,42 +75,53 @@ def getBestServer():
     recieved_json = json.loads(json.dumps(request.json()))  # Loading recieved json
     data = recieved_json["data"]
     return data["server"]   # Returns best available server
+
+    print("Best server --> " + data["server" + "\n"])
+# --------------------------------------------------------------------------------
+
+def readFile(file_name):
+    
+    os.chdir(runtime_path)
+    os.chdir("files")
+    
+    print("\n" + "[*] Reading '" + file_name + "'" + "..." )
+
+    with open(file_name, "rb") as f:
+        return f.read()
+
+    print("[*] Read succesfully" + "\n")
+    os.chdir(runtime_path)
+        
+
 # --------------------------------------------------------------------------------
 
 def uploadFiles(file_list, best_server):
     # https://srv-file6.gofile.io/uploadFile
     # example --> {'status': 'ok', 'data': {'code': 'XnjNq3', 'adminCode': '95WyBxdomNVmjvnmcq7p', 'file': {'name': 'file', 'mimetype': 'text/plain', 'size': 0}}}
-    
-    recieved_json = None
-    
-    print("\n" + "Best server --> " + best_server + "\n")
+   
 
     for file_name in file_list: # Iterating files in directory
        
-        os.chdir(runtime_path)
-        os.chdir("files/")
+        file_content = readFile(file_name)  # reading the content of the file
 
-        print("[*] Reading '" + file_name + "'...")
-        file_content = open(file_name, "rb").read() # Reading file content
-        print("[!] Done" + "\n")
-
-        print("[*] Sending '" + file_name + "'...") # Performing request
+        print("[*] Sending '" + file_name + "'...") 
 
         if tor: # Tor request
-            print("[!] Using tor to perform the request [!]" + "\n")
-            request = requests.post("https://" + best_server + ".gofile.io/uploadFile", proxies=tor_proxy, headers=headers, data={"description":file_name}, files={"file":(file_name,file_content)})
+            print("[!] Using tor to perform the request [!]")
+            request = requests.post("https://" + best_server + ".gofile.io/uploadFile", proxies=tor_proxy, headers=headers, files={"file":(file_name,file_content)})
 
         else: # Normal request
-            request = requests.post("https://" + best_server + ".gofile.io/uploadFile", headers=headers, data={"description":file_name}, files={"file":(file_name,file_content)})
+            request = requests.post("https://" + best_server + ".gofile.io/uploadFile", headers=headers, files={"file":(file_name,file_content)})
 
-        print("[*] Done" + "\n")
-        recieved_json = json.loads(json.dumps(request.json()))  # Loading json  
+        print("[*] Sent succesfully" + "\n")
+
+        recieved_json = json.loads(json.dumps(request.json()))  # Loading recieved json  
         request_headers = request.headers   # Getting request headers
-        prepareFileOutput(recieved_json, file_list, best_server, request_headers)    # write all the output on a file
+        prepareFileOutput(recieved_json, best_server, request_headers)    # writing all to an output on a file
 
 # ----------------------------------------------------------------------------------
 
-def prepareFileOutput(recieved_json, file_list, server, request_headers):
+def prepareFileOutput(recieved_json, server, request_headers):
     
     os.chdir(runtime_path)
     output = open("output_" + time + ".txt", "a")

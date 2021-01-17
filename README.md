@@ -21,13 +21,13 @@ Upload your files to [gofile.io](https://gofile.io) easily with this Python scri
 ## Checksums
 gofile_uploader.py hashes
 
->Md5 --> `6f2ef43d6a4e509552ebbbd8e3cd606d`
+>Md5 --> `a094412a0c0f49b38a2436e7116896a2`
 
->Sha1 --> `1306da5fe03c9ef0368d7af41133565559857379`
+>Sha1 --> `b737cbd950a0c50b320ecbf14a11e1b52190860d`
 
->Sha256 --> `4044d4d90bf2ae2e6d1d130c63f7bca7026bbef2ea78d9411932b9636bdce87a`
+>Sha256 --> `a00a4e298a06a6b5ea4e04158195748ff57ad14e80d63a6be13d2f722fb29e13`
 
->Sha512 --> `ec9a1bca55cadee28854e2eefc1245540a8fcc1a6e68e55c99df47422c8c31f6e0b8a0d34715c2a4fb6c0742cdff101eb57ebaa6d2b5c9a1d2c0a88f5baca682`
+>Sha512 --> `77c4faeabde6adccb1e125b12aaee5d0fb5bb46ab690418f631d57d7a06c77e0d414925c90641774bbb713b00347f0d4f48c25008d3713f03c6ee25819f153aa`
 
 ## Setup
 
