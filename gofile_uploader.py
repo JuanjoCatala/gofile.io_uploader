@@ -6,20 +6,23 @@ import datetime
 import requests
 import json
 
-tor = False
+tor = False 
 
-# Enables or disable tor depending on the arguments
+runtime_path = os.getcwd()  # getting the execution path, to move better around folders
+time = str(datetime.datetime.now())  # getting the clock time, to include it in filenames, avoiding overwritting log files
+
+# Enables or disables tor depending on the arguments
 
 try:
     if sys.argv[1] == "tor" or sys.argv[1] == "Tor" or sys.argv[1] == "TOR":
         tor = True
-    elif sys.argv[1] != "tor" and sys.argv[1] != "Tor" and sys.argv[1] != "TOR":
+    else:
         print("Invalid argument. Did you mean 'tor'?")
         sys.exit()
 except IndexError:  # In case there's no parameter recieved
     tor = False
 
-# Ask for VPN
+#---------- Asking for VPN in case tor is not used, to avoid uploading files with the original IP in case of an user error
 
 if tor == False:
     answer = input("Are you using VPN?? [Y/N] ")
@@ -27,9 +30,6 @@ if tor == False:
         pass
     else:
         sys.exit()
-
-runtime_path = os.getcwd()
-time = str(datetime.datetime.now())
 
 #---------- check if directories created
 
@@ -156,7 +156,7 @@ except FileNotFoundError:
     sys.exit()
 
 except requests.exceptions.ConnectionError:
-    print("ConnectionError - Please, check your internet connection, your VPN or tor (tor must run on 127.0.0.1:9050)")
+    print("ConnectionError - Please, check your internet connection, your VPN, or tor. (tor must run on 127.0.0.1:9050)")
     sys.exit()
 
 except ConnectionRefusedError:
