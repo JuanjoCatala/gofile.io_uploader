@@ -8,8 +8,8 @@ import json
 
 tor = False 
 
-runtime_path = os.getcwd()  # getting the execution path, to move better on folders
-time = str(datetime.datetime.now())  # getting the clock time, to include it in filenames, avoiding overwritting
+runtime_path = os.getcwd()  # getting the execution path, to move better around folders
+time = str(datetime.datetime.now())  # getting the clock time, to include it in filenames, avoiding overwritting log files
 
 # Enables or disables tor depending on the arguments
 
@@ -31,7 +31,7 @@ if tor == False:
     else:
         sys.exit()
 
-#---------- check if directories exists (just to avoid issues)
+#---------- check if directories created
 
 if os.path.exists("files"):
     pass
