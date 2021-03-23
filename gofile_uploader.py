@@ -14,7 +14,7 @@ time = str(datetime.datetime.now())  # getting the clock time, to include it in 
 # Enables or disables tor depending on the arguments
 
 try:
-    if sys.argv[1] == "tor" or sys.argv[1] == "Tor" or sys.argv[1] == "TOR":
+    if sys.argv[1].lower() == "tor":
         tor = True
     else:
         print("Invalid argument. Did you mean 'tor'?")
@@ -26,7 +26,7 @@ except IndexError:  # In case there's no parameter recieved
 
 if tor == False:
     answer = input("Are you using VPN?? [Y/N] ")
-    if answer == "Y" or answer == "y":
+    if answer.lower() == "y":
         pass
     else:
         sys.exit()
@@ -116,8 +116,7 @@ def uploadFiles(file_list, best_server):
         print("[*] Sent succesfully" + "\n")
 
         recieved_json = json.loads(json.dumps(request.json()))  # Loading recieved json  
-        request_headers = request.headers   # Getting request headers
-        prepareFileOutput(recieved_json, best_server, request_headers)    # writing all to an output on a file
+        prepareFileOutput(recieved_json, best_server, request.headers)    # writing all to an output on a file
 
 # ----------------------------------------------------------------------------------
 
