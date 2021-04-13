@@ -17,7 +17,7 @@ import hashlib
 
 # ---- setting up the arguments ------
 
-argumentParser = argparse.ArgumentParser(description="Upload files to anonfile.io!")
+argumentParser = argparse.ArgumentParser(description="Upload files to anonfile.io! | Ver. 0.0.1")
 argumentParser.add_argument("-p", "--proxy", type=str, required=False, help="Upload files through a custom proxy")
 
 
@@ -36,7 +36,7 @@ systemTime: str = str(datetime.datetime.now())
 
 torProxy: dict = {
 	"http" : "socks5://127.0.0.1:9050",
-	"https" : "socks5::127.0.0.1:9050"
+	"https" : "socks5://127.0.0.1:9050"
 	}
 
 fakeHeaders: dict = {
@@ -65,33 +65,29 @@ def performGETRequest(url: str) -> dict:
 	return parseJSON(request)
 
 def performGETRequestWithProxy(url: str, proxy: dict) -> dict:
-	request = request.get(url, headers=fakeHeaders, proxies=proxy)
+	request = requests.get(url, headers=fakeHeaders, proxies=proxy)
 	return rarseJSON(request)
 
 def performPOSTRequest(url: str, filename: str, fileContent: bytes) -> dict:
-	request = requests.get(url, headers=fakeHeaders, files={"file":(filename, fileContent)})
+	request = requests.post(url, headers=fakeHeaders, files={"file":(filename, fileContent)})
 	return parseJSON(request)
 
 def performPOSTRequestWithProxy(url: str, proxy: dict, filename: str, fileContent: bytes) -> dict:
-	request = request.get(url, headers=fakeHeaders, proxies=proxy, files={"file":(filename, fileContent)})
+	request = requests.post(url, headers=fakeHeaders, proxies=proxy, files={"file":(filename, fileContent)})
 	return parseJSON(request)
 
 
-def readFile(filename: str, path: str) -> bytes:
-	os.chdir(path)
-	fileContent: bytes = None
-
+def readFile(filename: str) -> bytes:
+	os.chdir("uploads")
 	with open(filename, "rb") as f:
-		fileContent = f.read()
+		os.chdir(runtimePath)
+		return f.read()
 
+def getFileMD5(filename: str) -> str:
+	fileContent: bytes = readFile(filename)
+	MD5Hash: str = hashlib.md5(fileContent).hexdigest()
 	os.chdir(runtimePath)
-	return fileContent
-
-def getFileMD5(filename: str, path: str) -> str:
-	os.chdir(path)
-	fileContent: bytes = readFile(filename, path)
-	return hashlib.md5(fileContent).hexdigest()
-	os.chdir(runtimePath)
+	return MD5Hash
 
 def getBestServer() -> str:
 	# {"status":"ok","data":{"server":"srv-store1"}}	
@@ -108,12 +104,22 @@ def uploadFile(filename: str, fileContent: str) -> dict:
 	bestServer: str = getBestServer()	
 
 	if torSelected:
-		print("[*] Sending " + filename + " to " + "https://" + bestServer + ".gofile.io/uploadFile" + "...")
+		print(f"\n[*] Sending {filename} to https://{bestServer}.gofile.io/uploadFile")
 		return performPOSTRequestWithProxy("https://" + bestServer + ".gofile.io/uploadFile", torProxy, filename, fileContent)
 	else:
-		print("[*] Sending " + filename + " to " + "https://" + bestServer + ".gofile.io/uploadFile" + "...")
+		print(f"\n[*] Sending {filename} to https://{bestServer}.gofile.io/uploadFile")
 		return performPOSTRequest("https://" + bestServer + ".gofile.io/uploadFile", filename, fileContent)
 
+
+def replaceIlegalChars(filename: str):
+	ilegalChars: tuple = (" ", "\\", "/", ":", ",", "<", ">")
+	
+	cleanName: str = None
+	for char in filename:
+		if char in ilegalChars:
+			cleanName = filename.replace(char, "-")
+	return cleanName
+		
 
 def createUploadLog(requestJSON: dict):
 	
@@ -121,25 +127,39 @@ def createUploadLog(requestJSON: dict):
 	fileUrl: str = "https://gofile.io/d/" + requestJSON["data"]["code"]
 	adminCode: str = requestJSON["data"]["adminCode"]
 	filename: str = requestJSON["data"]["fileName"]
-	md5: str = requestJSON["data"]["md5"]
+	uploadMD5: str = requestJSON["data"]["md5"]
+	
 
-	MD5TestResult: bool = [ getFileMD5(filename, "upload") is md5 ] 
+	MD5TestResult: bool = getFileMD5(filename) == uploadMD5 
 	uploadedWithTor: bool = torSelected	
 
-	logFilename: str = "upload" + systemTime + ".txt"
-	logFile: _io.TextIOWrapper = open(logFilename, a)	
+	logFilename: str = replaceIlegalChars(f"upload.{systemTime}.txt")
+	logFile: _io.TextIOWrapper = open(logFilename, "a")	
 
-	f.write("---------------- " + filename + " ---------------- " + systemTime)
-	f.write("statusCode -->" + statusCode)
-	f.write("filename --> " + filename)
-	f.write("file url --> " + fileUrl)
-	f.write("adminCode --> " + adminCode + " [Be careful with this]")
-	f.write("md5 --> " + md5)
-	f.write(" ")
-	f.write("[!] MD5 CHECK RESULT [!] --> " + MD5TestResult)	
-	f.write("[!] Uploaded with tor? --> " + uploadedWithTor)
-	f.write("--------------------------------------------")
+	logFile.write("---------------- " + filename + " ---------------- " + systemTime + "\n")
+	logFile.write("statusCode -->" + statusCode + "\n")
+	logFile.write("filename --> " + filename + "\n")
+	logFile.write("file url --> " + fileUrl + "\n")
+	logFile.write("adminCode --> " + adminCode + " [Be careful with this] \n")
+	logFile.write("md5 --> " + uploadMD5 + "\n")
 
+	logFile.write("\n")
+
+	logFile.write("[!] MD5 CHECK RESULT [!] --> " + str(MD5TestResult) + "\n")	
+	logFile.write("[!] Uploaded with tor? [!] --> " + str(uploadedWithTor) + "\n")
+	logFile.write("\n")
+
+	logFile.close()
+
+	
+
+def printLogFile():
+
+	logName = replaceIlegalChars(f"upload.{systemTime}.txt")
+	print(f"\n[*] Log file saved as '{runtimePath}/{logName}' \n")
+		
+	with open(logName, "rt") as logFile:
+		print(logFile.read())
 
 def main():
 	checkFolders()
@@ -147,11 +167,13 @@ def main():
 
 	for file in fileList:
 
-		fileContent: bytes = readFile(file, "uploads")		
+		fileContent: bytes = readFile(file)		
 		requestJSON: dict = uploadFile(file, fileContent)
-
+		
+		os.chdir(runtimePath)
 		createUploadLog(requestJSON)
 
+	printLogFile()
 
 # -------------- MAIN BEGINS HERE -------------------
 

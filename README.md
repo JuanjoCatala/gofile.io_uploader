@@ -1,5 +1,4 @@
 # gofile.io_uploader
-## [ON DEVELOP] Wait for the new release 
 
 Upload your files to [gofile.io](https://gofile.io) easily with this Python script!. 
 
@@ -13,23 +12,28 @@ Upload your files to [gofile.io](https://gofile.io) easily with this Python scri
 
 
 ## General info
->Upload your files to [gofile.io](https://gofile.io) easily. (This script is supposed to work on windows, but it hasn't been tested)
+
+>- Upload your files to [gofile.io](https://gofile.io) easily. (This script is supposed to work on windows, but it hasn't been tested)
+>- New release (0.0.1), less and cleaner code. More functions will be added
 
 ## Capabilities
 
 >- Posibility of uploading files using tor
+>- Uploads are logged in the runtime folder
 >- User-agent spoofed
+>- MD5 check between local and cloud files
 
 ## Checksums
-gofile_uploader.py hashes
 
->Md5 --> `120ce3b98d7894f761e77a4731605b7e`
+gofileUploader.py hashes
 
->Sha1 --> `c0737e53db3eb58f414cba91851c9b3f5f873aaa`
+>Md5 --> `9b06d7b3ab107c1df18758fed3705b6b`
 
->Sha256 --> `17706ee89714ee8369b9f62e5eb4a5da744f3a688c52b84e3b049b870534f900`
+>Sha1 --> `bad4451e2d9aaee0858b00caf263e1391f48cab6`
 
->Sha512 --> `b47127144cc778c4cc3ef2b66c5f007f8de822397f695e1e3f3899413e677845f9832682f779a3e26965524ecd558f80c2e7794b082eb4f4f10c5ed7559ac739`
+>Sha256 --> `e2ad5e7bf6e8b95d43d95bec7f189a0aadbbc0e167194f7b0e66fcc34dcec36a`
+
+>Sha512 --> `47b20040108a0038018421735855e9369c586c9c81751d1f342402050bf3a30757ddea7f5843a1dff7397bcb8038ca6a53a6c18dd8da453a845b5bd8339356b1`
 
 ## Setup
 
@@ -37,7 +41,7 @@ gofile_uploader.py hashes
 
 `$ pip3 install -r requirements.txt`
 
-Then move your files into "files/" directory.
+Then move your files into "uploads/" directory.
 
 ## Examples
 
@@ -45,11 +49,11 @@ Then move your files into "files/" directory.
 
 `$ python3 gofile_uploader.py` (Upload your files using YOUR ACTUAL IP)
 
-`$ python3 gofile_uploader.py tor` (Upload your files using TOR. You must have tor running on 127.0.0.1:9050)
+`$ python3 gofile_uploader.py -t` (Upload your files using TOR. You must have tor running on 127.0.0.1:9050)
 
-![alt text](example.png)
+![alt text](example.jpg)
 
 ## Features to add
 
-- Upload many files in only one link
-- Include tor binaries
+- Include native tor binaries
+- Add custom proxy capability
