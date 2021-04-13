@@ -60,7 +60,7 @@ Then move your files into "uploads/" directory.
 
 `$ python3 gofile_uploader.py -t` (Upload your files using TOR. You must have tor running on 127.0.0.1:9050)
 
-`$ python3 gofile_uploader.py (-t) -d -u "https://gofile.io/d/Udmxxx"-a "V2CiusxxQxxxxxxxxxxx"`
+`$ python3 gofile_uploader.py (-t) -d -u "https://gofile.io/d/Udmxxx"-a "V2CiusxxQxxxxxxxxxxx"` (delete an uploaded file)
 
 `$ python3 gofile_uploader.py (--tor) --delete --url "https://gofile.io/d/Udmxxx"--adminCode "V2CiusxxQxxxxxxxxxxx"`
 
