@@ -1,6 +1,6 @@
 # gofile.io_uploader
 
-Upload your files to [gofile.io](https://gofile.io) easily with this Python script!. 
+Upload your files to [gofile.io](https://gofile.io) automatically with this Python script!. 
 
 ## Table of contents
 * [General info](#general-info)
@@ -18,7 +18,7 @@ Upload your files to [gofile.io](https://gofile.io) easily with this Python scri
 
 ## Changelog
 
-# New release "0.0.2".
+>New release "0.0.2".
 
 >- Now you can delete files from gofile.io
 >- Errors with socks fixed
