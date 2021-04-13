@@ -1,6 +1,6 @@
 argparse==1.4.0
 requests==2.25.1 
-hashlib==20081119
 datetime==4.3
-
+pysocks==1.7.1
+hashlib==20081119
 

@@ -5,6 +5,7 @@ import json
 import argparse
 import datetime
 import hashlib
+import socks
 
 # ----- API URLs -----
 # https://api.gofile.io/getServer
@@ -17,12 +18,14 @@ import hashlib
 
 # ---- setting up the arguments ------
 
-argumentParser = argparse.ArgumentParser(description="Upload files to anonfile.io! | Ver. 0.0.1")
-argumentParser.add_argument("-p", "--proxy", type=str, required=False, help="Upload files through a custom proxy")
+argumentParser = argparse.ArgumentParser(description="Upload files to gofile.io! | Ver. 0.0.2")
+#argumentParser.add_argument("-p", "--proxy", type=str, required=False, help="Upload files through a custom proxy")
+argumentParser.add_argument("-a", "--adminCode", type=str, required=False, help="Specify the admin code of the file to delete")
+argumentParser.add_argument("-u", "--url", type=str, required=False, help="Specify the url of the file to delete")
 
+argumentParser.add_argument('-t', "--tor", action='store_true', required=False)
+argumentParser.add_argument('-d', "--delete", action='store_true', required=False)
 
-mutuallyExclusiveGroup = argumentParser.add_mutually_exclusive_group(required=False)
-mutuallyExclusiveGroup.add_argument("-t", "--tor", help="Upload files trough tor proxy (127.0.0.1:9050)", action="store_true", required=False)
 
 arguments = argumentParser.parse_args()
 
@@ -30,7 +33,13 @@ arguments = argumentParser.parse_args()
 # -------- Defining variables --------
 
 runtimePath: str = os.getcwd()
+
 torSelected: bool = arguments.tor
+deleteModeSelected: bool = arguments.delete
+
+adminCodeToDelete: str = arguments.adminCode
+urlToDelete: str = arguments.url
+
 systemTime: str = str(datetime.datetime.now())
 
 
@@ -64,9 +73,17 @@ def performGETRequest(url: str) -> dict:
 	request = requests.get(url, headers=fakeHeaders)
 	return parseJSON(request)
 
+def performGETRequestWithData(url: str, dataToSend: dict) -> dict:
+	request = requests.get(url, headers=fakeHeaders, params=dataToSend)
+	return parseJSON(request)
+
 def performGETRequestWithProxy(url: str, proxy: dict) -> dict:
 	request = requests.get(url, headers=fakeHeaders, proxies=proxy)
-	return rarseJSON(request)
+	return parseJSON(request)
+
+def performGETRequestWithDataAndProxy(url: str, proxy: dict, dataToSend: dict) -> dict:
+	request = requests.get(url, headers=fakeHeaders, proxies=proxy, params=dataToSend)
+	return parseJSON(request)
 
 def performPOSTRequest(url: str, filename: str, fileContent: bytes) -> dict:
 	request = requests.post(url, headers=fakeHeaders, files={"file":(filename, fileContent)})
@@ -110,6 +127,12 @@ def uploadFile(filename: str, fileContent: str) -> dict:
 		print(f"\n[*] Sending {filename} to https://{bestServer}.gofile.io/uploadFile")
 		return performPOSTRequest("https://" + bestServer + ".gofile.io/uploadFile", filename, fileContent)
 
+def deleteUpload(dataToDelete: dict):
+	if torSelected:
+		return performGETRequestWithDataAndProxy("https://api.gofile.io/deleteUpload", torProxy, dataToDelete)
+	
+	else:
+		return performGETRequestWithData("https://api.gofile.io/deleteUpload", dataToDelete)
 
 def replaceIlegalChars(filename: str):
 	ilegalChars: tuple = (" ", "\\", "/", ":", ",", "<", ">")
@@ -120,6 +143,8 @@ def replaceIlegalChars(filename: str):
 			cleanName = filename.replace(char, "-")
 	return cleanName
 		
+def parseUrlCode(url: str) -> str:
+	return url.split("d/")[1]
 
 def createUploadLog(requestJSON: dict):
 	
@@ -161,7 +186,7 @@ def printLogFile():
 	with open(logName, "rt") as logFile:
 		print(logFile.read())
 
-def main():
+def uploadProcess():
 	checkFolders()
 	fileList: list = getFilesInUploadFolder()
 
@@ -169,13 +194,34 @@ def main():
 
 		fileContent: bytes = readFile(file)		
 		requestJSON: dict = uploadFile(file, fileContent)
-		
+		print("status --> " + requestJSON["status"])		
+	
 		os.chdir(runtimePath)
 		createUploadLog(requestJSON)
 
 	printLogFile()
 
+def deleteProcess():
+
+	dataToDelete: dict = {
+		"c" : parseUrlCode(urlToDelete),
+		"ac" : adminCodeToDelete
+	
+	}
+	
+	requestJSON = deleteUpload(dataToDelete)
+	print("status --> " + requestJSON["status"]) 
+	
+
+def main():
+	
+	if deleteModeSelected:
+		deleteProcess()
+	else:
+		uploadProcess()
+
 # -------------- MAIN BEGINS HERE -------------------
 
 if __name__ == "__main__":	# just to not execute in case this file is imported
 	main()
+
