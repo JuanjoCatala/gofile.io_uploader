@@ -1,4 +1,6 @@
 # gofile.io_uploader
+## [ON DEVELOP] Wait for the new release 
+
 Upload your files to [gofile.io](https://gofile.io) easily with this Python script!. 
 
 ## Table of contents

@@ -1,209 +1,159 @@
-#!/usr/bin/python3
-
 import os
 import sys
-import datetime
 import requests
 import json
+import argparse
+import datetime
+import hashlib
 
-tor = False 
-
-runtime_path = os.getcwd()  # getting the execution path, to move better around folders
-time = str(datetime.datetime.now())  # getting the clock time, to include it in filenames, avoiding overwritting log files
-
-# Enables or disables tor depending on the arguments
-
-try:
-    if sys.argv[1].lower() == "tor":
-        tor = True
-    else:
-        print("Invalid argument. Did you mean 'tor'?")
-        sys.exit()
-except IndexError:  # In case there's no parameter recieved
-    tor = False
-
-#---------- Asking for VPN in case tor is not used, to avoid uploading files with the original IP in case of an user error
-
-if tor == False:
-    answer = input("Are you using VPN?? [Y/N] ")
-    if answer.lower() == "y":
-        pass
-    else:
-        sys.exit()
-
-#---------- check if directories created
-
-if os.path.exists("files"):
-    pass
-else: 
-    os.mkdir("files")
-    print("Dir created, please move your files in there and restart the script")
-    sys.exit()
-
-# ---------- Defining proxys and headers ---------------------------------------
-
-tor_proxy = {
-        'http' : "socks5://127.0.0.1:9050",
-        'https' : "socks5://127.0.0.1:9050"
-        }
-
-headers = {
-
-        'user-agent' : "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0",
-        'accept-language' : "en-US,en;q=0.5"
-        }
-
-# ----------- functions ---------------------------------------------------------
-
-def getFiles():     # Returns a list with the filenames in "files" directory
-
-    os.chdir("files")
-    return os.listdir() 
-    os.chdir(runtime_path)
-# -------------------------------------------------------------------------------
-
-def getBestServer():
-    # https://apiv2.gofile.io/getServer
-    # example --> {"status":"ok","data":{"server":"srv-file6"}}
-    
-    if tor: 
-        request = requests.get("https://apiv2.gofile.io/getServer", headers=headers, proxies=tor_proxy) # Tor request
-
-    else: # Normal request
-        request = requests.get("https://apiv2.gofile.io/getServer", headers=headers)
-
-    recieved_json = json.loads(json.dumps(request.json()))  # Loading recieved json
-    data = recieved_json["data"]
-    return data["server"]   # Returns best available server
-
-    print("Best server --> " + data["server" + "\n"])
-# --------------------------------------------------------------------------------
-
-def readFile(file_name):
-    
-    os.chdir(runtime_path)
-    os.chdir("files")
-    
-    print("\n" + "[*] Reading '" + file_name + "'" + "..." )
-
-    with open(file_name, "rb") as f:
-        return f.read()
-
-    print("[*] Read succesfully" + "\n")
-    os.chdir(runtime_path)
-        
-
-# --------------------------------------------------------------------------------
-
-def uploadFiles(file_list, best_server):
-    # https://srv-file6.gofile.io/uploadFile
-    # example --> {'status': 'ok', 'data': {'code': 'XnjNq3', 'adminCode': '95WyBxdomNVmjvnmcq7p', 'file': {'name': 'file', 'mimetype': 'text/plain', 'size': 0}}}
-   
-
-    for file_name in file_list: # Iterating files in directory
-       
-        file_content = readFile(file_name)  # reading the content of the file
-
-        print("[*] Sending '" + file_name + "'...") 
-
-        if tor: # Tor request
-            print("[!] Using tor to perform the request [!]")
-            request = requests.post("https://" + best_server + ".gofile.io/uploadFile", proxies=tor_proxy, headers=headers, files={"file":(file_name,file_content)})
-
-        else: # Normal request
-            request = requests.post("https://" + best_server + ".gofile.io/uploadFile", headers=headers, files={"file":(file_name,file_content)})
-
-        print("[*] Sent succesfully" + "\n")
-
-        recieved_json = json.loads(json.dumps(request.json()))  # Loading recieved json  
-        prepareFileOutput(recieved_json, best_server, request.headers)    # writing all to an output on a file
-
-# ----------------------------------------------------------------------------------
-
-def prepareFileOutput(recieved_json, server, request_headers):
-    
-    os.chdir(runtime_path)
-    output = open("output_" + time + ".txt", "a")
-   
-    status = recieved_json["status"]
-    data = recieved_json["data"]
-    file_info = data["file"]
-
-    file_url = "https://gofile.io/d/" + data["code"]
-    admin_code = data["adminCode" ]
-    file_name = file_info["name"]
-    file_size = file_info["size"]
-    file_type = file_info["mimetype"]
-    
-    output.write("--------- " + file_name  + " ------------ [" + str(datetime.datetime.now()) + "] \n" )
-    output.write("Filename --> " +  file_name + "\n")
-    output.write("File size --> " + str(file_size)+ " bytes" + "\n")
-    output.write("File type --> " + file_type + "\n")
-    output.write("File url --> " + file_url + "\n")
-    output.write("Used server --> " + server + "\n")
-    output.write("Admin code --> " + admin_code + " (Don't share this!)" + "\n")
-    output.write(" " + "\n")
-    output.write("Request headers --> " + str(request_headers) + "\n")
-
-    if tor:
-        output.write(" ")
-        output.write("---- [UPLOADED USING TOR] ----" + "\n")
-
-    output.write("-------------------------------" + "\n")
-    output.write(" " + "\n")
-    output.close()
+# ----- API URLs -----
+# https://api.gofile.io/getServer
+# https://{server}.gofile.io/uploadFile
+# 
+# https://api.gofile.io/deleteUpload?c=XXXXAbc&token=XXXX
+# https://api.gofile.io/getAccountInfo?token=XXXXXX
+# https://api.gofile.io/getUploadsList?token=XXXXXXX
 
 
-#--------------------- Main ----------------------------------
+# ---- setting up the arguments ------
 
-try:
-    file_list = getFiles()
-    best_server = getBestServer()
-    uploadFiles(file_list, best_server)
-
-except FileNotFoundError:
-    print("FileNotFoundError - Please, move your files into 'files' directory")
-    sys.exit()
-
-except requests.exceptions.ConnectionError:
-    print("ConnectionError - Please, check your internet connection, your VPN, or tor. (tor must run on 127.0.0.1:9050)")
-    sys.exit()
-
-except ConnectionRefusedError:
-    print("ConnectionRefusedError - Please, check your internet connection, your proxy or your VPN")
-
-except requests.exceptions.HTTPError:
-    print("HTTPError - Probably API has changed")
-    sys.exit()
-
-except requests.exceptions.ProxyError:
-    print("ProxyError - Is tor running on 127.0.0.1:9050 ?")
-
-except requests.exceptions.SSLError:
-    print("SSLError - An SSL error ocurred")
-    sys.exit()
-
-except requests.exceptions.ConnectTimeout:
-    print("ConnectTimeoutError - Request timed out while trying to connect to server")
-    sys.exit()
-
-except requests.exceptions.ReadTimeout:
-    print("ReadTimeoutError - Server didn't send any data in the alloted amount of time")
-    sys.exit()
-
-except requests.exceptions.InvalidURL:
-    print("InvalidURLError - API URL seems to be invalid")
-    sys.exit()
-
-except requests.exceptions.InvalidHeader:
-    print("InvalidHeaderError - Header seems to be invalid")
-    sys.exit()
-
-except json.decoder.JSONDecodeError:
-    print("JSONDecodeError - Failed while decoding json response")
-    sys.exit()
-
-except KeyboardInterrupt:
-    sys.exit()
+argumentParser = argparse.ArgumentParser(description="Upload files to anonfile.io!")
+argumentParser.add_argument("-p", "--proxy", type=str, required=False, help="Upload files through a custom proxy")
 
 
+mutuallyExclusiveGroup = argumentParser.add_mutually_exclusive_group(required=False)
+mutuallyExclusiveGroup.add_argument("-t", "--tor", help="Upload files trough tor proxy (127.0.0.1:9050)", action="store_true", required=False)
+
+arguments = argumentParser.parse_args()
+
+
+# -------- Defining variables --------
+
+runtimePath: str = os.getcwd()
+torSelected: bool = arguments.tor
+systemTime: str = str(datetime.datetime.now())
+
+
+torProxy: dict = {
+	"http" : "socks5://127.0.0.1:9050",
+	"https" : "socks5::127.0.0.1:9050"
+	}
+
+fakeHeaders: dict = {
+	"user-agent" : "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.7113.93 Safari/537.36",
+	"accept-language" : "en-US,en;q=0.5"
+	
+	}
+
+
+def checkFolders():
+	if not os.path.exists("uploads"):
+		os.mkdir("uploads")	
+		raise Exception("Folder 'upload' does not exists. Please restart the script and put your files in there")	
+
+def getFilesInUploadFolder() -> list:
+	os.chdir("uploads")
+	files: dict = os.listdir()
+	os.chdir(runtimePath)
+	return files
+
+def parseJSON(requestJson: requests) -> dict:
+	return json.loads(json.dumps(requestJson.json()))
+
+def performGETRequest(url: str) -> dict:
+	request = requests.get(url, headers=fakeHeaders)
+	return parseJSON(request)
+
+def performGETRequestWithProxy(url: str, proxy: dict) -> dict:
+	request = request.get(url, headers=fakeHeaders, proxies=proxy)
+	return rarseJSON(request)
+
+def performPOSTRequest(url: str, filename: str, fileContent: bytes) -> dict:
+	request = requests.get(url, headers=fakeHeaders, files={"file":(filename, fileContent)})
+	return parseJSON(request)
+
+def performPOSTRequestWithProxy(url: str, proxy: dict, filename: str, fileContent: bytes) -> dict:
+	request = request.get(url, headers=fakeHeaders, proxies=proxy, files={"file":(filename, fileContent)})
+	return parseJSON(request)
+
+
+def readFile(filename: str, path: str) -> bytes:
+	os.chdir(path)
+	fileContent: bytes = None
+
+	with open(filename, "rb") as f:
+		fileContent = f.read()
+
+	os.chdir(runtimePath)
+	return fileContent
+
+def getFileMD5(filename: str, path: str) -> str:
+	os.chdir(path)
+	fileContent: bytes = readFile(filename, path)
+	return hashlib.md5(fileContent).hexdigest()
+	os.chdir(runtimePath)
+
+def getBestServer() -> str:
+	# {"status":"ok","data":{"server":"srv-store1"}}	
+
+	if torSelected:
+		return performGETRequestWithProxy("https://api.gofile.io/getServer", torProxy)["data"]["server"]
+	else:
+		return performGETRequest("https://api.gofile.io/getServer")["data"]["server"]
+
+
+def uploadFile(filename: str, fileContent: str) -> dict:
+	# {"status":"ok","data":{"code":"123Abc","adminCode":"Cd9yjCk62syKNEPfAeQg","fileName":"file.txt","md5":"2a4a7522de4ba17a8c6cd920c89f8386"}}	
+
+	bestServer: str = getBestServer()	
+
+	if torSelected:
+		print("[*] Sending " + filename + " to " + "https://" + bestServer + ".gofile.io/uploadFile" + "...")
+		return performPOSTRequestWithProxy("https://" + bestServer + ".gofile.io/uploadFile", torProxy, filename, fileContent)
+	else:
+		print("[*] Sending " + filename + " to " + "https://" + bestServer + ".gofile.io/uploadFile" + "...")
+		return performPOSTRequest("https://" + bestServer + ".gofile.io/uploadFile", filename, fileContent)
+
+
+def createUploadLog(requestJSON: dict):
+	
+	statusCode: str = requestJSON["status"]
+	fileUrl: str = "https://gofile.io/d/" + requestJSON["data"]["code"]
+	adminCode: str = requestJSON["data"]["adminCode"]
+	filename: str = requestJSON["data"]["fileName"]
+	md5: str = requestJSON["data"]["md5"]
+
+	MD5TestResult: bool = [ getFileMD5(filename, "upload") is md5 ] 
+	uploadedWithTor: bool = torSelected	
+
+	logFilename: str = "upload" + systemTime + ".txt"
+	logFile: _io.TextIOWrapper = open(logFilename, a)	
+
+	f.write("---------------- " + filename + " ---------------- " + systemTime)
+	f.write("statusCode -->" + statusCode)
+	f.write("filename --> " + filename)
+	f.write("file url --> " + fileUrl)
+	f.write("adminCode --> " + adminCode + " [Be careful with this]")
+	f.write("md5 --> " + md5)
+	f.write(" ")
+	f.write("[!] MD5 CHECK RESULT [!] --> " + MD5TestResult)	
+	f.write("[!] Uploaded with tor? --> " + uploadedWithTor)
+	f.write("--------------------------------------------")
+
+
+def main():
+	checkFolders()
+	fileList: list = getFilesInUploadFolder()
+
+	for file in fileList:
+
+		fileContent: bytes = readFile(file, "uploads")		
+		requestJSON: dict = uploadFile(file, fileContent)
+
+		createUploadLog(requestJSON)
+
+
+# -------------- MAIN BEGINS HERE -------------------
+
+if __name__ == "__main__":	# just to not execute in case this file is imported
+	main()
